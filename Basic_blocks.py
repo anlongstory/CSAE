@@ -1,10 +1,3 @@
-################################################
-#
-#  Author: Chris Zhang
-#  Date : 2019/1/10
-#  Function: Used to build some basic blocks
-#
-#################################################
 import torch.nn as nn
 import torch.nn.functional as F
 
