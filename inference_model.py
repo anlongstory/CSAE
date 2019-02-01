@@ -134,6 +134,6 @@ if generate_flag:
     generate_mix_samples(net1,net2)
 
 if recon_flag:
-    MNIST_test_data_shuffle=DataLoader(MNIST_test_set,batch_size = BatchSize,shuffle = True)
+   # if you want to test the extrapolation of CSAE,change all 'MNIST_test_data_shuffle' to 'letter_test_data'
     for i in range(len(MNIST_test_data_shuffle)):
         reconstruction(net1,net2,i,MNIST_test_data_shuffle)

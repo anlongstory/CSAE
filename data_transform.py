@@ -57,6 +57,7 @@ MNIST_test_set = MNIST(MNIST_root,train=False,transform=data_transform)
 MNIST_train_data = DataLoader(MNIST_train_set,batch_size = BatchSize,shuffle = True)
 MNIST_test_data =  DataLoader(MNIST_test_set,batch_size = BatchSize,shuffle = False)
 
+MNIST_test_data_shuffle=DataLoader(MNIST_test_set,batch_size = BatchSize,shuffle = True)
 ############## Fashion-MNIST
 
 
