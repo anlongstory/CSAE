@@ -54,11 +54,18 @@ def read_pkl():
     f.close()
     return a
 
-def laplace(im,deconv):
-    weight = np.array([[[[0.,-1.,0],[-1.,4.,-1.],[0.,-1.,0.]]]])
-    weight = torch.from_numpy(weight).float().cuda()
-    diff = im-deconv
-    return F.conv2d(diff,weight=weight,stride=1,padding=1)
+
+def sobel(im):
+    weight_x = np.array([[[[-1., 0., 1.], [-2., 0., 2.], [-1., 0., 1.]]]])
+    weight_y = np.array([[[[-1., -2., -1.], [0., 0., 0.], [1., 2., 1.]]]])
+
+    weight_x = torch.from_numpy(weight_x).float().cuda()
+    weight_y = torch.from_numpy(weight_y).float().cuda()
+
+    sobel_x = F.conv2d(im,weight=weight_x,stride=1,padding=1)
+    sobel_y = F.conv2d(im,weight=weight_y,stride=1,padding=1)
+
+    return sobel_x+sobel_y
 
 def train_en_de_C(net1,net2, train_data, valid_data, epoch, optimizer_en,optimizer_de, criterion):
     '''
@@ -100,9 +107,14 @@ def train_en_de_C(net1,net2, train_data, valid_data, epoch, optimizer_en,optimiz
         output_deconv = net2(new_out)
         loss2 = criterion(output_deconv,im)
 
-        laplace_diff = laplace(im,output_deconv)
-        zeros = np.zeros([im.size(0),im.size(1),im.size(2),im.size(3)])
-        loss3 = 0.2*criterion(laplace_diff,torch.from_numpy(zeros).float().cuda())
+        sobel_im = sobel(im)
+        sobel_deconv = sobel(output_deconv)
+
+        zeros = np.zeros([sobel_im.size(0), sobel_im.size(1), sobel_im.size(2), sobel_im.size(3)])
+        loss3_1 =  criterion(sobel_im, torch.from_numpy(zeros).float().cuda())
+        loss3_2 =  criterion(sobel_deconv, torch.from_numpy(zeros).float().cuda())
+        loss3 = 0.02*torch.abs(loss3_1 - loss3_2)
+
         loss = loss1 + loss2 + loss3
 
         optimizer_en.zero_grad()
@@ -148,9 +160,15 @@ def train_en_de_C(net1,net2, train_data, valid_data, epoch, optimizer_en,optimiz
             output2 = net2(output1)
             loss2 = criterion(output2, im)
 
-            laplace_diff = laplace(im, output2)
-            zeros = np.zeros([im.size(0), im.size(1), im.size(2), im.size(3)])
-            loss3 = 0.2*criterion(laplace_diff, torch.from_numpy(zeros).float().cuda())
+
+            sobel_im = sobel(im)
+            sobel_deconv = sobel(output2)
+            zeros = np.zeros([sobel_im.size(0), sobel_im.size(1), sobel_im.size(2), sobel_im.size(3)])
+            loss3_1 = criterion(sobel_im, torch.from_numpy(zeros).float().cuda())
+            loss3_2 = criterion(sobel_deconv, torch.from_numpy(zeros).float().cuda())
+            loss3 = 0.02*torch.abs(loss3_1 - loss3_2)
+
+
             loss = loss1 + loss2 + loss3
             valid_loss += loss.item()
             val_loss1 += loss1.item()
@@ -181,5 +199,3 @@ def train_en_de_C(net1,net2, train_data, valid_data, epoch, optimizer_en,optimiz
     f.write(epoch_str + time_str + '\n')
     f.write(Loss+'\n')
     f.close()
-
-
